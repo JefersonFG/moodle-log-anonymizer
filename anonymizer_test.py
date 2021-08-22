@@ -1,5 +1,8 @@
+import csv
 import os
 import unittest
+
+import pandas as pd
 
 import anonymizer
 
@@ -9,10 +12,48 @@ class AnonymizerTest(unittest.TestCase):
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
     def setUp(self):
-        """setUp creates an example dataset file to test the anonymization procedure"""
-        dataset = '''Hora,"Nome completo","Usuário afetado","Contexto do Evento",Componente,"Nome do evento",Descrição,Origem,"endereço IP"\n"01/01/2001 10:00","Test name 1","Test name 2","Test course 1",Logs,"Relatório de log visto","The user with id '000000' viewed the log report for the course with id '00000'.",test_origin,0.0.0.0'''
-        with open(self.test_dataset_path, "w") as f:
-            f.write(dataset)
+        df = pd.DataFrame(
+            {
+                'Hora': [
+                    '"01/01/2001 10:00"',
+                    '"01/01/2001 11:00"',
+                ],
+                '"Nome completo"': [
+                    '"Test name 1"',
+                    '"Test name 2"',
+                ],
+                '"Usuário afetado"': [
+                    '-',
+                    '"Test name 2"',
+                ],
+                '"Contexto do Evento"': [
+                    '"Test course 1"',
+                    '"Test course 1"',
+                ],
+                'Componente': [
+                    'Tarefa',
+                    'Tarefa',
+                ],
+                '"Nome do evento"': [
+                    '"O status da submissão foi visualizado."',
+                    '"Comentário visualizado"',
+                ],
+                'Descrição': [
+                    '''"The user with id '000000' has viewed the submission status page for the assignment with course module id '000000'."''',
+                    '''"The user with id '000000' viewed the feedback for the user with id '000000' for the assignment with course module id '000000'."''',
+                ],
+                'Origem': [
+                    'test_origin',
+                    'test_origin2',
+                ],
+                '"endereço IP"': [
+                    '0.0.0.0',
+                    '0.0.0.1',
+                ],
+            }
+        )
+
+        df.to_csv(self.test_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
     def tearDown(self):
         """tearDown deletes both the source and the target files to clean up after the tests"""
