@@ -68,6 +68,13 @@ class AnonymizerTest(unittest.TestCase):
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
         self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
 
+    def test_removed_columns(self):
+        """Tests columns that must be removed from the original dataset for absence on anonymized dataset"""
+        anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
+        df = pd.read_csv(self.anonymized_dataset_path)
+        self.assertNotIn('Origem', df.columns)
+        self.assertNotIn('endereço IP', df.columns)
+
 
 if __name__ == '__main__':
     unittest.main()

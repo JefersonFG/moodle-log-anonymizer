@@ -22,7 +22,15 @@ def anonymize_dataset(source_dataset_path, target_dataset_path):
     The anonymization procedure applies pseudonymisation to the students names and id, while removing
     the origin and ip address columns, as those are unnecessary to the kind of analysis we have in mind."""
     df = pd.read_csv(source_dataset_path)
+    df = column_suppression(df)
     df.to_csv(target_dataset_path, index=False, quoting=csv.QUOTE_NONE)
+
+
+# Column removal
+def column_suppression(df) -> pd.DataFrame:
+    """Function that suppresses unnecessary columns from the dataset"""
+    df.drop(['Origem', 'endereço IP'], axis=1, inplace=True)
+    return df
 
 
 # Main script
