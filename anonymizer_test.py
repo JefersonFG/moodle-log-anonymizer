@@ -12,6 +12,7 @@ class AnonymizerTest(unittest.TestCase):
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
     def setUp(self):
+        """"setUp creates the test dataset with valid data"""
         df = pd.DataFrame(
             {
                 'Hora': [
@@ -62,7 +63,8 @@ class AnonymizerTest(unittest.TestCase):
         if os.path.exists(self.anonymized_dataset_path):
             os.remove(self.anonymized_dataset_path)
 
-    def test_anonymize(self):
+    def test_create_anonymized_dataset(self):
+        """Tests that the anonymized dataset is created, but doesn't validate its contents"""
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
         self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
 

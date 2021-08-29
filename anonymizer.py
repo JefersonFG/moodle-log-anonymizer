@@ -1,4 +1,7 @@
 import argparse
+import csv
+
+import pandas as pd
 
 # Column names for the log file
 hour_column = 'Hora'
@@ -18,7 +21,8 @@ def anonymize_dataset(source_dataset_path, target_dataset_path):
 
     The anonymization procedure applies pseudonymisation to the students names and id, while removing
     the origin and ip address columns, as those are unnecessary to the kind of analysis we have in mind."""
-    raise Exception("not implemented")
+    df = pd.read_csv(source_dataset_path)
+    df.to_csv(target_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
 
 # Main script
