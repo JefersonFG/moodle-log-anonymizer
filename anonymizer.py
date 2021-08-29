@@ -2,17 +2,18 @@ import argparse
 import csv
 
 import pandas as pd
+from faker import Faker
 
 # Column names for the log file
 hour_column = 'Hora'
-complete_name_column = '"Nome completo"'
-affected_user_column = '"Usuário afetado"'
-event_context_column = '"Contexto do Evento"'
+complete_name_column = 'Nome completo'
+affected_user_column = 'Usuário afetado'
+event_context_column = 'Contexto do Evento'
 component_column = 'Componente'
-event_name_column = '"Nome do evento"'
+event_name_column = 'Nome do evento'
 description_column = 'Descrição'
 origin_column = 'Origem'
-ip_address_column = '"endereço IP"'
+ip_address_column = 'endereço IP'
 
 
 # Main anonymization function
@@ -22,14 +23,42 @@ def anonymize_dataset(source_dataset_path, target_dataset_path):
     The anonymization procedure applies pseudonymisation to the students names and id, while removing
     the origin and ip address columns, as those are unnecessary to the kind of analysis we have in mind."""
     df = pd.read_csv(source_dataset_path)
-    df = column_suppression(df)
+    df = suppress_columns(df)
+    df = anonymize_names(df)
     df.to_csv(target_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
 
 # Column removal
-def column_suppression(df) -> pd.DataFrame:
+def suppress_columns(df) -> pd.DataFrame:
     """Function that suppresses unnecessary columns from the dataset"""
-    df.drop(['Origem', 'endereço IP'], axis=1, inplace=True)
+    df.drop([origin_column, ip_address_column], axis=1, inplace=True)
+    return df
+
+
+# Name anonymization
+def get_fake_names(length):
+    """Returns a list of fake names, to be used as substitutes to the real students names"""
+    names = set()
+    fake = Faker()
+    while len(names) < length:
+        names.add(fake.name())
+    return list(names)
+
+
+def anonymize_names(df) -> pd.DataFrame:
+    """Function that replaces original students names with randomly created ones.
+
+    Since we want to follow the trajectory of each student we must map each real name to the same generated one,
+    so changes are consistent throughout the dataset"""
+    original_names = set()
+    original_names.update(df[complete_name_column].unique())
+    original_names.update(df[affected_user_column].unique())
+    original_names = list(original_names)
+    names_dict = dict(zip(original_names, get_fake_names(len(original_names))))
+    names_dict["-"] = "-"  # for non-present names in the affected user column
+    df[complete_name_column] = df[complete_name_column]
+    df[complete_name_column] = df[complete_name_column].apply(lambda name: names_dict[name])
+    df[affected_user_column] = df[affected_user_column].apply(lambda name: names_dict[name])
     return df
 
 

@@ -12,7 +12,7 @@ class AnonymizerTest(unittest.TestCase):
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
     # List of columns to be suppressed on the anonymized dataset; must be present on the test dataset
-    columns_to_be_removed = ['Origem', 'endereço IP']
+    columns_to_be_removed = [anonymizer.origin_column, anonymizer.ip_address_column]
 
     # List of student names present on the test dataset, to be checked against anonymized dataset, must not be present
     student_names = ['Test name 1', 'Test name 2']

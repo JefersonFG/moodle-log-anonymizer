@@ -17,3 +17,7 @@ The tests reside on the `anonymizer_test.py` file and use the `unittest` package
 ```bash
 python -m anonymizer_test
 ```
+
+## References
+
+Based on the implementation of [anonymoodle](https://github.com/alfonsodelavega/anonymoodle), which works on a slightly different log structure with another language.
