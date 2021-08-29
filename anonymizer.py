@@ -1,5 +1,7 @@
 import argparse
 import csv
+import re
+from collections import defaultdict
 
 import pandas as pd
 from faker import Faker
@@ -15,9 +17,15 @@ description_column = 'Descrição'
 origin_column = 'Origem'
 ip_address_column = 'endereço IP'
 
+# Regular expression for finding the user ids in the logs
+id_pattern = "The user with id '(-?\\d+)'"
+
+# Fallback id for fields where no id is present
+null_id = -288
+
 
 # Main anonymization function
-def anonymize_dataset(source_dataset_path, target_dataset_path):
+def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
     """anonymize_dataset takes the path to the dataset to anonymize and the target path for the result.
 
     The anonymization procedure applies pseudonymisation to the students names and id, while removing
@@ -25,6 +33,7 @@ def anonymize_dataset(source_dataset_path, target_dataset_path):
     df = pd.read_csv(source_dataset_path)
     df = suppress_columns(df)
     df = anonymize_names(df)
+    df = anonymize_ids(df)
     df.to_csv(target_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
 
@@ -36,7 +45,7 @@ def suppress_columns(df) -> pd.DataFrame:
 
 
 # Name anonymization
-def get_fake_names(length):
+def get_fake_names(length) -> list:
     """Returns a list of fake names, to be used as substitutes to the real students names"""
     names = set()
     fake = Faker()
@@ -56,9 +65,39 @@ def anonymize_names(df) -> pd.DataFrame:
     original_names = list(original_names)
     names_dict = dict(zip(original_names, get_fake_names(len(original_names))))
     names_dict["-"] = "-"  # for non-present names in the affected user column
-    df[complete_name_column] = df[complete_name_column]
     df[complete_name_column] = df[complete_name_column].apply(lambda name: names_dict[name])
     df[affected_user_column] = df[affected_user_column].apply(lambda name: names_dict[name])
+    return df
+
+
+# ID anonymization
+def get_user_id(row) -> str:
+    """Searches the description column for entries with a user id, returning the found one or the fallback id"""
+    pattern = re.match(id_pattern, row[description_column])
+    if pattern is not None:
+        return pattern.group(1)
+    return str(null_id)
+
+
+def replace_user_id(description, id_dict) -> str:
+    """Searches for all ids inside the description field, changing their occurrences by their values on the dict"""
+    for user_id in id_dict:
+        description = description.replace(user_id, id_dict[user_id])
+    return description
+
+
+def anonymize_ids(df) -> pd.DataFrame:
+    """Replaces original student ids with randomly created new ones.
+
+    As with the students name each original id must map to the same new generated id on all occurrences
+    throughout the dataset"""
+    all_user_ids = df.apply(get_user_id, axis=1)
+    original_ids = set()
+    original_ids.update(all_user_ids.unique())
+    original_ids = list(original_ids)
+    ids_dict = defaultdict(lambda: str(null_id),
+                           zip(original_ids, [str(x) for x in range(len(original_ids))]))
+    df[description_column] = df[description_column].apply(lambda field: replace_user_id(field, ids_dict))
     return df
 
 
