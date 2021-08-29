@@ -84,6 +84,16 @@ class AnonymizerTest(unittest.TestCase):
         for column in self.columns_to_be_removed:
             self.assertNotIn(column, df.columns)
 
+    def test_anonymized_names(self):
+        """Tests that the original students names cannot be found anywhere on the anonymized dataset"""
+        anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
+        with open(self.anonymized_dataset_path) as file:
+            csv_reader = csv.reader(file)
+            for row in csv_reader:
+                for field in row:
+                    for name in self.student_names:
+                        self.assertNotIn(name, field)
+
 
 if __name__ == '__main__':
     unittest.main()
