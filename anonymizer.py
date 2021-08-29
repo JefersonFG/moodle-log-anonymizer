@@ -1,7 +1,6 @@
 import argparse
-import csv
 import re
-from collections import defaultdict
+from random import randint
 
 import pandas as pd
 from faker import Faker
@@ -34,7 +33,7 @@ def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
     df = suppress_columns(df)
     df = anonymize_names(df)
     df = anonymize_ids(df)
-    df.to_csv(target_dataset_path, index=False, quoting=csv.QUOTE_NONE)
+    df.to_csv(target_dataset_path, index=False)
 
 
 # Column removal
@@ -82,7 +81,13 @@ def get_user_id(row) -> str:
 def replace_user_id(description, id_dict) -> str:
     """Searches for all ids inside the description field, changing their occurrences by their values on the dict"""
     for user_id in id_dict:
-        description = description.replace(user_id, id_dict[user_id])
+        quoted_user_id = "'{}'".format(user_id)
+        # Full string specifying user id, so we don't accidentally change course id too
+        user_id_description = "The user with id '{}'".format(user_id)
+        if user_id_description in description:
+            quoted_generated_id = "'{}'".format(id_dict[user_id])
+            description = description.replace(quoted_user_id, quoted_generated_id)
+            break
     return description
 
 
@@ -95,8 +100,12 @@ def anonymize_ids(df) -> pd.DataFrame:
     original_ids = set()
     original_ids.update(all_user_ids.unique())
     original_ids = list(original_ids)
-    ids_dict = defaultdict(lambda: str(null_id),
-                           zip(original_ids, [str(x) for x in range(len(original_ids))]))
+    ids_dict = {key: str(randint(0, 99999)) for key in original_ids}
+    # Leave this default/admin ids without change
+    ids_dict["-1"] = "-1"
+    ids_dict["0"] = "0"
+    ids_dict["1"] = "1"
+    ids_dict["2"] = "2"
     df[description_column] = df[description_column].apply(lambda field: replace_user_id(field, ids_dict))
     return df
 
