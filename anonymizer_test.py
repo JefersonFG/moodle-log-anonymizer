@@ -11,6 +11,15 @@ class AnonymizerTest(unittest.TestCase):
     test_dataset_path = 'test_dataset.csv'
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
+    # List of columns to be suppressed on the anonymized dataset; must be present on the test dataset
+    columns_to_be_removed = ['Origem', 'endereço IP']
+
+    # List of student names present on the test dataset, to be checked against anonymized dataset, must not be present
+    student_names = ['Test name 1', 'Test name 2']
+
+    # List of user ids present on the test dataset, to be checked against anonymized dataset, must not be present
+    user_ids = ['123456', '654321']
+
     def setUp(self):
         """"setUp creates the test dataset with valid data"""
         df = pd.DataFrame(
@@ -40,8 +49,8 @@ class AnonymizerTest(unittest.TestCase):
                     '"Comentário visualizado"',
                 ],
                 'Descrição': [
-                    '''"The user with id '000000' has viewed the submission status page for the assignment with course module id '000000'."''',
-                    '''"The user with id '000000' viewed the feedback for the user with id '000000' for the assignment with course module id '000000'."''',
+                    '''"The user with id '123456' has viewed the submission status page for the assignment with course module id '000000'."''',
+                    '''"The user with id '654321' viewed the feedback for the user with id '654321' for the assignment with course module id '000000'."''',
                 ],
                 'Origem': [
                     'test_origin',
@@ -72,8 +81,8 @@ class AnonymizerTest(unittest.TestCase):
         """Tests columns that must be removed from the original dataset for absence on anonymized dataset"""
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
         df = pd.read_csv(self.anonymized_dataset_path)
-        self.assertNotIn('Origem', df.columns)
-        self.assertNotIn('endereço IP', df.columns)
+        for column in self.columns_to_be_removed:
+            self.assertNotIn(column, df.columns)
 
 
 if __name__ == '__main__':
