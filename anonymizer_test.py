@@ -80,7 +80,8 @@ class AnonymizerTest(unittest.TestCase):
 
         df.to_csv(self.test_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
-        df.drop(columns=[anonymizer.origin_column, anonymizer.ip_address_column], inplace=True, errors='ignore')
+        df.drop(columns=[anonymizer.affected_user_column, anonymizer.description_column,
+                         anonymizer.origin_column, anonymizer.ip_address_column], inplace=True, errors='ignore')
         df.to_csv(self.test_dataset_fewer_columns_path, index=False, quoting=csv.QUOTE_NONE)
 
         # Grades
@@ -135,11 +136,11 @@ class AnonymizerTest(unittest.TestCase):
     def test_create_anonymized_dataset(self):
         """Tests that the anonymized dataset is created, but doesn't validate its contents"""
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
-        self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
+        self.assertTrue(os.path.exists(self.anonymized_dataset_path), "anonymized dataset not created")
 
         # Repeat test for input with fewer columns
         anonymizer.anonymize_dataset(self.test_dataset_fewer_columns_path, self.anonymized_dataset_path)
-        self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
+        self.assertTrue(os.path.exists(self.anonymized_dataset_path), "anonymized dataset not created")
 
     def test_removed_columns(self):
         """Tests columns that must be removed from the original dataset for absence on anonymized dataset"""
@@ -177,7 +178,7 @@ class AnonymizerTest(unittest.TestCase):
     def test_create_anonymized_grades(self):
         """Tests that the anonymized grades dataset is created, but doesn't validate its contents"""
         anonymizer.anonymize_grades(self.test_grades_path, self.anonymized_test_grades_path)
-        self.assertTrue(os.path.exists(self.anonymized_test_grades_path), "Anonymized dataset not created")
+        self.assertTrue(os.path.exists(self.anonymized_test_grades_path), "anonymized grades file not created")
 
     def test_anonymized_names_on_grades(self):
         """Tests that the original students names and IDs cannot be found anywhere on the anonymized dataset"""
@@ -185,6 +186,16 @@ class AnonymizerTest(unittest.TestCase):
         df = pd.read_excel(self.anonymized_test_grades_path)
         for name in self.student_names:
             self.assertNotIn(name, df.values)
+
+    def test_anonymized_names_consistency(self):
+        """Tests that when anonymizing both the logs and the grades the same fake name is used on both files"""
+        anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
+        anonymizer.anonymize_grades(self.test_grades_path, self.anonymized_test_grades_path)
+        logs_df = pd.read_csv(self.anonymized_dataset_path)
+        grades_df = pd.read_excel(self.anonymized_test_grades_path)
+        self.assertEqual(logs_df[anonymizer.complete_name_column][0],
+                         grades_df[anonymizer.grades_complete_name_column][0],
+                         "anonymized files have different fake names for the same student")
 
 
 if __name__ == '__main__':

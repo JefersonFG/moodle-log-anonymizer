@@ -16,6 +16,11 @@ description_column = 'Descrição'
 origin_column = 'Origem'
 ip_address_column = 'endereço IP'
 
+# Column names for the grades file
+# Here we assume a column with full student name, which is not the default
+# You should either change this value or create this column beforehand
+grades_complete_name_column = 'Nome completo'
+
 # Regular expression for finding the user ids in the logs
 id_pattern = "The user with id '(-?\\d+)'"
 
@@ -31,7 +36,7 @@ def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
     the origin and ip address columns, as those are unnecessary to the kind of analysis we have in mind."""
     df = pd.read_csv(source_dataset_path)
     df = suppress_columns(df)
-    df = anonymize_names(df)
+    df = anonymize_names(df, complete_name_column, affected_user_column)
     df = anonymize_ids(df)
     df.to_csv(target_dataset_path, index=False)
 
@@ -53,19 +58,23 @@ def get_fake_names(length) -> list:
     return list(names)
 
 
-def anonymize_names(df) -> pd.DataFrame:
+def anonymize_names(df, *column_names) -> pd.DataFrame:
     """Function that replaces original students names with randomly created ones.
 
     Since we want to follow the trajectory of each student we must map each real name to the same generated one,
     so changes are consistent throughout the dataset"""
     original_names = set()
-    original_names.update(df[complete_name_column].unique())
-    original_names.update(df[affected_user_column].unique())
+    for column in column_names:
+        if column in df.columns:
+            original_names.update(df[column].unique())
     original_names = list(original_names)
+    if len(original_names) == 0:
+        return df
     names_dict = dict(zip(original_names, get_fake_names(len(original_names))))
     names_dict["-"] = "-"  # for non-present names in the affected user column
-    df[complete_name_column] = df[complete_name_column].apply(lambda name: names_dict[name])
-    df[affected_user_column] = df[affected_user_column].apply(lambda name: names_dict[name])
+    for column in column_names:
+        if column in df.columns:
+            df[column] = df[column].apply(lambda name: names_dict[name])
     return df
 
 
@@ -91,22 +100,13 @@ def replace_user_id(description, id_dict) -> str:
     return description
 
 
-# Main grades anonymization function
-def anonymize_grades(source_dataset_path, target_dataset_path) -> None:
-    """anonymize_grades takes the path to the dataset to anonymize and the target path for the result.
-
-    The anonymization procedure applies pseudonymisation to the full students names, making sure the same
-    mapping of real name to fake name used in the anonymization of the logs is used here."""
-    df = pd.read_excel(source_dataset_path)
-    with pd.ExcelWriter(target_dataset_path) as writer:
-        df.to_excel(writer, index=False)
-
-
 def anonymize_ids(df) -> pd.DataFrame:
     """Replaces original student ids with randomly created new ones.
 
     As with the students name each original id must map to the same new generated id on all occurrences
     throughout the dataset"""
+    if description_column not in df.columns:
+        return df
     all_user_ids = df.apply(get_user_id, axis=1)
     original_ids = set()
     original_ids.update(all_user_ids.unique())
@@ -119,6 +119,18 @@ def anonymize_ids(df) -> pd.DataFrame:
     ids_dict["2"] = "2"
     df[description_column] = df[description_column].apply(lambda field: replace_user_id(field, ids_dict))
     return df
+
+
+# Main grades anonymization function
+def anonymize_grades(source_dataset_path, target_dataset_path) -> None:
+    """anonymize_grades takes the path to the dataset to anonymize and the target path for the result.
+
+    The anonymization procedure applies pseudonymisation to the full students names, making sure the same
+    mapping of real name to fake name used in the anonymization of the logs is used here."""
+    df = pd.read_excel(source_dataset_path)
+    df = anonymize_names(df, grades_complete_name_column)
+    with pd.ExcelWriter(target_dataset_path) as writer:
+        df.to_excel(writer, index=False)
 
 
 # Main script
