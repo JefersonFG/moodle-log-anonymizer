@@ -19,7 +19,7 @@ python anonymizer.py moodle_logs.csv anonymized_moodle_logs.csv
 You can also optionally pass the path to the grades to be anonymized as well as the path for the result to be saved to:
 
 ```bash
-python anonymizer.py moodle_logs.csv anonymized_moodle_logs.csv moodle_grades.xlsx anonymized_moodle_grades.xlsx
+python anonymizer.py moodle_logs.csv anonymized_moodle_logs.csv --source_grades_path moodle_grades.xlsx --target_grades_path anonymized_moodle_grades.xlsx
 ```
 
 ## Testing

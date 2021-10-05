@@ -149,3 +149,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     anonymize_dataset(args.source_logs_path, args.target_logs_path)
+    anonymize_grades(args.source_grades_path, args.target_grades_path)
