@@ -27,6 +27,10 @@ id_pattern = "The user with id '(-?\\d+)'"
 # Fallback id for fields where no id is present
 null_id = -288
 
+# Map of real student names to fake ones, so the same fake name will be used for the same student on both files
+# Already covers non present names on the affected column
+names_map = {"-": "-"}
+
 
 # Main logs anonymization function
 def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
@@ -70,11 +74,12 @@ def anonymize_names(df, *column_names) -> pd.DataFrame:
     original_names = list(original_names)
     if len(original_names) == 0:
         return df
-    names_dict = dict(zip(original_names, get_fake_names(len(original_names))))
-    names_dict["-"] = "-"  # for non-present names in the affected user column
+    current_names_map = dict(zip(original_names, get_fake_names(len(original_names))))
+    resulting_map = current_names_map | names_map
+    names_map.update(resulting_map)
     for column in column_names:
         if column in df.columns:
-            df[column] = df[column].apply(lambda name: names_dict[name])
+            df[column] = df[column].apply(lambda name: names_map[name])
     return df
 
 
