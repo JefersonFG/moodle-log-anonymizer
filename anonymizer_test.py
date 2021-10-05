@@ -12,6 +12,9 @@ class AnonymizerTest(unittest.TestCase):
     test_dataset_fewer_columns_path = 'test_dataset_fewer_columns.csv'
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
+    test_grades_path = 'test_grades.xlsx'
+    anonymized_test_grades_path = 'anonymized_grades.xlsx'
+
     # List of columns to be suppressed on the anonymized dataset; must be present on the test dataset
     columns_to_be_removed = [anonymizer.origin_column, anonymizer.ip_address_column]
 
@@ -23,6 +26,8 @@ class AnonymizerTest(unittest.TestCase):
 
     def setUp(self):
         """"setUp creates the test dataset with valid data"""
+
+        # Activity logs
         df = pd.DataFrame(
             {
                 'Hora': [
@@ -78,6 +83,42 @@ class AnonymizerTest(unittest.TestCase):
         df.drop(columns=[anonymizer.origin_column, anonymizer.ip_address_column], inplace=True, errors='ignore')
         df.to_csv(self.test_dataset_fewer_columns_path, index=False, quoting=csv.QUOTE_NONE)
 
+        # Grades
+        # Here we assume the grades have had the name and surname columns combined into one full name column
+        # We also ignore the email column, if you're editing this script you might want to test the support here
+        df = pd.DataFrame(
+            {
+                'Nome completo': [
+                    '"Test name 1"',
+                    '"Test name 2"',
+                    'Test name 3'
+                ],
+                'Tarefa 1': [
+                    '10',
+                    '20',
+                    '30'
+                ],
+                'Tarefa 2': [
+                    '40',
+                    '50',
+                    '60'
+                ],
+                'Tarefa 3': [
+                    '70',
+                    '80',
+                    '90'
+                ],
+                'Total do curso (Real)': [
+                    '50',
+                    '50',
+                    '50'
+                ],
+            }
+        )
+
+        with pd.ExcelWriter(self.test_grades_path) as writer:
+            df.to_excel(writer, index=False)
+
     def tearDown(self):
         """tearDown deletes both the source and the target files to clean up after the tests"""
         if os.path.exists(self.test_dataset_path):
@@ -86,6 +127,10 @@ class AnonymizerTest(unittest.TestCase):
             os.remove(self.test_dataset_fewer_columns_path)
         if os.path.exists(self.anonymized_dataset_path):
             os.remove(self.anonymized_dataset_path)
+        if os.path.exists(self.test_grades_path):
+            os.remove(self.test_grades_path)
+        if os.path.exists(self.anonymized_test_grades_path):
+            os.remove(self.anonymized_test_grades_path)
 
     def test_create_anonymized_dataset(self):
         """Tests that the anonymized dataset is created, but doesn't validate its contents"""
@@ -128,6 +173,11 @@ class AnonymizerTest(unittest.TestCase):
                         self.assertNotIn(name, field)
                     for user_id in self.user_ids:
                         self.assertNotIn(user_id, field)
+
+    def test_create_anonymized_grades(self):
+        """Tests that the anonymized grades dataset is created, but doesn't validate its contents"""
+        anonymizer.anonymize_grades(self.test_grades_path, self.anonymized_test_grades_path)
+        self.assertTrue(os.path.exists(self.anonymized_test_grades_path), "Anonymized dataset not created")
 
 
 if __name__ == '__main__':

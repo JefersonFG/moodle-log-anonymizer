@@ -23,7 +23,7 @@ id_pattern = "The user with id '(-?\\d+)'"
 null_id = -288
 
 
-# Main anonymization function
+# Main logs anonymization function
 def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
     """anonymize_dataset takes the path to the dataset to anonymize and the target path for the result.
 
@@ -89,6 +89,15 @@ def replace_user_id(description, id_dict) -> str:
             description = description.replace(quoted_user_id, quoted_generated_id)
             break
     return description
+
+
+# Main grades anonymization function
+def anonymize_grades(source_dataset_path, target_dataset_path) -> None:
+    """anonymize_grades takes the path to the dataset to anonymize and the target path for the result.
+
+    The anonymization procedure applies pseudonymisation to the full students names, making sure the same
+    mapping of real name to fake name used in the anonymization of the logs is used here."""
+    raise Exception("Not implemented")
 
 
 def anonymize_ids(df) -> pd.DataFrame:
