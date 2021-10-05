@@ -97,7 +97,9 @@ def anonymize_grades(source_dataset_path, target_dataset_path) -> None:
 
     The anonymization procedure applies pseudonymisation to the full students names, making sure the same
     mapping of real name to fake name used in the anonymization of the logs is used here."""
-    raise Exception("Not implemented")
+    df = pd.read_excel(source_dataset_path)
+    with pd.ExcelWriter(target_dataset_path) as writer:
+        df.to_excel(writer, index=False)
 
 
 def anonymize_ids(df) -> pd.DataFrame:
@@ -123,8 +125,10 @@ def anonymize_ids(df) -> pd.DataFrame:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''Use this tool to anonymize the logs obtained from moodle, generating
                                      random names for the students and removing the origin and ip address columns''')
-    parser.add_argument("source_path", help="Path to the moodle logs to anonymize")
-    parser.add_argument("target_path", help="Path to save the anonymized logs")
+    parser.add_argument("source_logs_path", help="Path to the moodle logs to anonymize")
+    parser.add_argument("target_logs_path", help="Path to save the anonymized logs")
+    parser.add_argument("--source_grades_path", help="Path to the moodle logs to anonymize")
+    parser.add_argument("--target_grades_path", help="Path to save the anonymized logs")
 
     args = parser.parse_args()
-    anonymize_dataset(args.source_path, args.target_path)
+    anonymize_dataset(args.source_logs_path, args.target_logs_path)

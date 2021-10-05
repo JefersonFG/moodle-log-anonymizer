@@ -89,8 +89,8 @@ class AnonymizerTest(unittest.TestCase):
         df = pd.DataFrame(
             {
                 'Nome completo': [
-                    '"Test name 1"',
-                    '"Test name 2"',
+                    'Test name 1',
+                    'Test name 2',
                     'Test name 3'
                 ],
                 'Tarefa 1': [
@@ -178,6 +178,13 @@ class AnonymizerTest(unittest.TestCase):
         """Tests that the anonymized grades dataset is created, but doesn't validate its contents"""
         anonymizer.anonymize_grades(self.test_grades_path, self.anonymized_test_grades_path)
         self.assertTrue(os.path.exists(self.anonymized_test_grades_path), "Anonymized dataset not created")
+
+    def test_anonymized_names_on_grades(self):
+        """Tests that the original students names and IDs cannot be found anywhere on the anonymized dataset"""
+        anonymizer.anonymize_grades(self.test_grades_path, self.anonymized_test_grades_path)
+        df = pd.read_excel(self.anonymized_test_grades_path)
+        for name in self.student_names:
+            self.assertNotIn(name, df.values)
 
 
 if __name__ == '__main__':
