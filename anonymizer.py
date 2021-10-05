@@ -39,7 +39,7 @@ def anonymize_dataset(source_dataset_path, target_dataset_path) -> None:
 # Column removal
 def suppress_columns(df) -> pd.DataFrame:
     """Function that suppresses unnecessary columns from the dataset"""
-    df.drop([origin_column, ip_address_column], axis=1, inplace=True)
+    df.drop(columns=[origin_column, ip_address_column], inplace=True, errors='ignore')
     return df
 
 

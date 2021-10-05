@@ -9,6 +9,7 @@ import anonymizer
 
 class AnonymizerTest(unittest.TestCase):
     test_dataset_path = 'test_dataset.csv'
+    test_dataset_fewer_columns_path = 'test_dataset_fewer_columns.csv'
     anonymized_dataset_path = 'anonymized_dataset.csv'
 
     # List of columns to be suppressed on the anonymized dataset; must be present on the test dataset
@@ -64,7 +65,7 @@ class AnonymizerTest(unittest.TestCase):
                     'test_origin2',
                     'cli'
                 ],
-                '"endereço IP"': [
+                'endereço IP': [
                     '0.0.0.0',
                     '0.0.0.1',
                     ''
@@ -74,16 +75,25 @@ class AnonymizerTest(unittest.TestCase):
 
         df.to_csv(self.test_dataset_path, index=False, quoting=csv.QUOTE_NONE)
 
+        df.drop(columns=[anonymizer.origin_column, anonymizer.ip_address_column], inplace=True, errors='ignore')
+        df.to_csv(self.test_dataset_fewer_columns_path, index=False, quoting=csv.QUOTE_NONE)
+
     def tearDown(self):
         """tearDown deletes both the source and the target files to clean up after the tests"""
         if os.path.exists(self.test_dataset_path):
             os.remove(self.test_dataset_path)
+        if os.path.exists(self.test_dataset_fewer_columns_path):
+            os.remove(self.test_dataset_fewer_columns_path)
         if os.path.exists(self.anonymized_dataset_path):
             os.remove(self.anonymized_dataset_path)
 
     def test_create_anonymized_dataset(self):
         """Tests that the anonymized dataset is created, but doesn't validate its contents"""
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
+        self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
+
+        # Repeat test for input with fewer columns
+        anonymizer.anonymize_dataset(self.test_dataset_fewer_columns_path, self.anonymized_dataset_path)
         self.assertTrue(os.path.exists(self.anonymized_dataset_path), "Anonymized dataset not created")
 
     def test_removed_columns(self):
@@ -93,23 +103,29 @@ class AnonymizerTest(unittest.TestCase):
         for column in self.columns_to_be_removed:
             self.assertNotIn(column, df.columns)
 
-    def test_anonymized_names(self):
-        """Tests that the original students names cannot be found anywhere on the anonymized dataset"""
+        # Repeat test for input with fewer columns
+        anonymizer.anonymize_dataset(self.test_dataset_fewer_columns_path, self.anonymized_dataset_path)
+        df = pd.read_csv(self.anonymized_dataset_path)
+        for column in self.columns_to_be_removed:
+            self.assertNotIn(column, df.columns)
+
+    def test_anonymized_names_and_ids(self):
+        """Tests that the original students names and IDs cannot be found anywhere on the anonymized dataset"""
         anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
+        self.check_names_and_ids()
+
+        # Repeat test for input with fewer columns
+        anonymizer.anonymize_dataset(self.test_dataset_fewer_columns_path, self.anonymized_dataset_path)
+        self.check_names_and_ids()
+
+    def check_names_and_ids(self):
+        """Runs after the call to the anonymization functions, searches the anonymized dataset for names and ids"""
         with open(self.anonymized_dataset_path) as file:
             csv_reader = csv.reader(file)
             for row in csv_reader:
                 for field in row:
                     for name in self.student_names:
                         self.assertNotIn(name, field)
-
-    def test_anonymized_ids(self):
-        """Tests that the original students ids cannot be found anywhere on the anonymized dataset"""
-        anonymizer.anonymize_dataset(self.test_dataset_path, self.anonymized_dataset_path)
-        with open(self.anonymized_dataset_path) as file:
-            csv_reader = csv.reader(file)
-            for row in csv_reader:
-                for field in row:
                     for user_id in self.user_ids:
                         self.assertNotIn(user_id, field)
 
